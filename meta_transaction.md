@@ -1,7 +1,3 @@
-Excellent! Since the script is working, here is the polished, final version of the lab guide in Markdown format. You can provide this directly to your students as their practical handout.
-
----
-
 # Lab: Gasless Meta-Transactions with EIP-712
 
 **Objective:** Understand how users can interact with a smart contract without holding ETH by signing a "Typed Data" message and allowing a Relayer to pay the gas on the Sepolia Testnet.
