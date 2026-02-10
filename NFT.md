@@ -1,4 +1,4 @@
-## Guide: Creating and Listing Your Custom NFT (2026 Edition)
+## Creating and Listing Your Custom NFT
 
 This guide walks you through the professional process of storing assets decentrally, deploying a custom smart contract via Remix, and listing your NFT on OpenSea.
 
@@ -100,7 +100,3 @@ Once deployed, look at the "Deployed Contracts" section at the bottom of the Rem
 | **Coding** | Remix / Solidity | Create your own "rules" and collection name. |
 | **Minting** | Remix / MetaMask | Put the NFT on the blockchain. |
 | **Market** | OpenSea | Make the NFT visible for buyers. |
-
----
-
-Would you like me to generate a specific **Unix timestamp** for a "Created Date" attribute to add to your metadata?
