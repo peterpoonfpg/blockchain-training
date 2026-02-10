@@ -1,7 +1,3 @@
-In this lab, students will learn the standard "Three-Step Flow" of ERC20 tokens. Instead of looking for bugs, we will focus on how to properly integrate tokens into a decentralized application (DApp) ecosystem.
-
----
-
 ## Lab 5: The ERC20 Lifecycle
 
 **Objective:** Master the three primary actions of the ERC20 standard: **Minting**, **Transferring**, and **Delegated Spending (Approve/TransferFrom)**.
@@ -84,10 +80,3 @@ Tokens are not "whole numbers" in Solidity. Students must understand the math.
 | `decimals()` | `18` | The number of decimal places (matches ETH). |
 | `totalSupply()` | `1000 * 10^18` | The total number of tokens in existence. |
 
----
-
-### 🎓 Summary for Students
-
-* **`transfer`**: Use this when you are sending tokens to a friend's wallet.
-* **`approve`**: Use this when you are interacting with a Smart Contract (DEX, Lending, etc.).
-* **`transferFrom`**: Used by the Smart Contract to "pull" the tokens you previously approved.
