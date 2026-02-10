@@ -143,7 +143,7 @@ generateMetaTx();
 
 ---
 
-## 4. Key Security Concepts for Students
+## 4. Key Security Concepts
 
 * **Signature Verification:** The `recover` function uses elliptic curve math to find the public key that signed the hash. If the hash (data) is changed by even one character, the recovered address will be wrong.
 * **Nonces:** Why did we use `nonces[user]++`? Without this, a malicious Relayer could "replay" your signature to update the message multiple times without your permission.
