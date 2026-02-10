@@ -96,13 +96,3 @@ Since we aren't using a frontend, we will use a small helper function or the Rem
 
 On a public blockchain, **privacy does not exist by default**. If the success of your logic depends on a secret (like a bid, a move in Rock-Paper-Scissors, or a password), you must use **Commit-Reveal** or **Zero-Knowledge Proofs** to hide that data from the mempool.
 
----
-
-### 🎓 Course Conclusion
-
-You have now covered the "Big Four" of Smart Contract Security:
-
-1. **Reentrancy**: Fix with CEI pattern.
-2. **Authorization**: Fix by avoiding `tx.origin`.
-3. **Arithmetic**: Fix by using Solidity 0.8+.
-4. **Front-Running**: Fix with Commit-Reveal.
