@@ -1,67 +1,62 @@
-
-# Lab: Upgradable Smart Contracts (Proxy Pattern)
-
-### Objective
-
-Deploy a contract, realize it has a "bug" or needs a new feature, and upgrade it to a new version **without changing the contract address** and **without losing data**.
+This lab will walk you through implementing an **Upgradable Smart Contract** using the **UUPS (Universal Upgradeable Proxy Standard)** pattern directly in Remix IDE.
 
 ---
 
-## 1. The Theory: How it Works
+## 1. The Architecture
 
-When a user calls the Proxy, it doesn't know what to do. It uses a `delegatecall` to ask the Implementation contract for the logic. The key is that the code runs in the **context** (storage) of the Proxy.
+In a proxy pattern, the state (variables) is stored in the **Proxy**, while the logic resides in the **Implementation** contract. When you upgrade, you simply point the Proxy to a new Implementation contract.
 
 ---
 
-## 2. The Smart Contracts
+## 2. Lab Setup: The Implementation Contracts
 
-### Step 1: Create `ImplementationV1.sol`
+We need two versions of a contract to demonstrate the upgrade.
 
-This is our first version. It has a simple counter.
+### Version 1: `ImplementationV1.sol`
+
+Create a new file in Remix named `ImplementationV1.sol`.
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract ImplementationV1 is UUPSUpgradeable, OwnableUpgradeable {
-    uint256 public count;
+contract ImplementationV1 is Initializable, UUPSUpgradeable, OwnableUpgradeable {
+    uint256 public value;
 
-    function initialize() public initializer {
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize(uint256 _value) public initializer {
         __Ownable_init(msg.sender);
+        __UUPSUpgradeable_init();
+        value = _value;
     }
 
-    function increment() public {
-        count += 1;
-    }
-
-    // Required by UUPS to restrict who can upgrade
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }
 
 ```
 
-### Step 2: Create `ImplementationV2.sol`
+### Version 2: `ImplementationV2.sol`
 
-This version adds a `decrement` function and a `name` variable.
+Create another file named `ImplementationV2.sol`. This version adds an `increment` function.
 
 ```solidity
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "./ImplementationV1.sol";
 
 contract ImplementationV2 is ImplementationV1 {
-    string public name;
-
-    function setName(string memory _name) public {
-        name = _name;
-    }
-
-    function decrement() public {
-        count -= 1;
+    // New logic for V2
+    function increment() public {
+        value += 1;
     }
 }
 
@@ -69,49 +64,41 @@ contract ImplementationV2 is ImplementationV1 {
 
 ---
 
-## 3. Practical Steps in Remix
+## 3. Step-by-Step Deployment in Remix
 
-### Phase A: Deployment (The Initial State)
+### Phase A: Deploying Version 1
 
-1. **Compile** `ImplementationV1`.
-2. Go to the **Deploy** tab.
-3. Instead of a regular deploy, use the **OpenZeppelin Proxy** tool if available, or manually deploy a `ERC1967Proxy` contract.
-* *Easier Method for Students:* Use the **Remix "Deploy with Proxy"** checkbox (available in modern Remix versions).
+1. **Compile:** Go to the "Solidity Compiler" tab and compile `ImplementationV1.sol`.
+2. **Deploy with Proxy:**
+* Go to the "Deploy & Run Transactions" tab.
+* Select `ImplementationV1` from the **Contract** dropdown.
+* Look for the checkImplementation **"Deploy with Proxy"** (Remix native feature). Check it.
+* Click **Deploy**.
 
 
-4. Once deployed, look at the address. Let's call it `0xPROXY`.
-5. Call `increment()`. Check `count`. It should be `1`.
+3. **Initialization:**
+* Remix will prompt you for the initialization parameters.
+* Input a number (e.g., `42`) for `_value`.
+* Confirm the transaction in the modal.
 
-### Phase B: The Upgrade
 
-1. **Compile** `ImplementationV2`.
-2. In the Deploy tab, select **ImplementationV2**.
-3. If using the Remix Proxy UI, select **Upgrade**.
-4. Paste the `0xPROXY` address into the upgrade field.
-5. Confirm the transaction.
+4. **Interact:**
+* You will see two entries in "Deployed Contracts": the **ERC1967Proxy** and the **ImplementationV1**.
+* **Always interact with the Proxy address.** Expand the Proxy instance; you should see the `value` is `42`.
 
-### Phase C: Verification (The "Magic Moment")
 
-1. Interact with the **same `0xPROXY` address**.
-2. **Check `count`:** It should still be `1` (Data was preserved!).
-3. **Check for new functions:** You should now see `decrement()` and `setName()`.
-4. Call `decrement()`. `count` should go back to `0`.
 
----
+### Phase B: Upgrading to Version 2
 
-## 4. The "Danger Zone"
+1. **Compile:** Compile `ImplementationV2.sol`.
+2. **Perform Upgrade:**
+* In the "Deploy & Run" tab, select `ImplementationV2` in the **Contract** dropdown.
+* Check **"Upgrade with Proxy"**.
+* In the address field that appears, ensure the address of your **already deployed Proxy** is selected.
+* Click **Upgrade**.
 
-### A. The "Initializer" vs. Constructor
 
-Explain to students that **Proxies cannot use constructors**. Why? Because constructors run during deployment and belong to the implementation's storage, not the proxy's. We use `initialize()` functions instead.
-
-### B. Storage Collisions
-
-This is the most dangerous part of upgradability.
-
-* **The Rule:** You can only **add** new variables at the **end** of the contract.
-* **The Demo:** Ask students what would happen if we swapped the order of `count` and `name` in V2. (Answer: The `name` string would overwrite the `count` slot, corrupting the data).
-
-### C. Who can upgrade?
-
-If this function isn't protected by `onlyOwner`, anyone could hijack the contract and upgrade it to a malicious version.
+3. **Verify:**
+* Interact with the same Proxy instance again.
+* You will now see the `increment` function available (you might need to "At Address" the ImplementationV2 ABI to the Proxy address if the UI doesn't refresh).
+* Call `increment`, then check `value`. It should now be `43`.
