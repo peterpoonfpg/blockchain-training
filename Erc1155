@@ -1,0 +1,111 @@
+
+# Lab: The Multi-Token Standard (ERC-1155)
+
+### Objective
+
+Create a "Game Item" contract where a single deployment manages:
+
+1. **Fungible Tokens:** "Gold Coins" (thousands of identical items).
+2. **Non-Fungible Tokens (NFTs):** "Legendary Sword" (one-of-a-kind item).
+
+---
+
+## 1. The Core Concept: ID-Based Balances
+
+In ERC-20, `balanceOf(user)` returns a number. In ERC-1155, you must specify which item: `balanceOf(user, id)`.
+
+---
+
+## 2. The Smart Contract
+
+Create a file in Remix named `GameItems.sol`. We will use the OpenZeppelin library to handle the heavy lifting.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract GameItems is ERC1155, Ownable {
+    // We define constants for our Token IDs
+    uint256 public constant GOLD_COIN = 0;
+    uint256 public constant SILVER_COIN = 1;
+    uint256 public constant DRAGON_SWORD = 2;
+    uint256 public constant SHIELD = 3;
+
+    constructor() ERC1155("https://game.example/api/item/{id}.json") Ownable(msg.sender) {
+        // Mint initial supply to the deployer
+        // ID 0 (Gold): 1,000,000 units (Fungible)
+        _mint(msg.sender, GOLD_COIN, 10**6, "");
+        
+        // ID 2 (Sword): 1 unit (Non-Fungible)
+        _mint(msg.sender, DRAGON_SWORD, 1, "");
+    }
+
+    // Function to mint more items (Only Owner)
+    function mint(address to, uint256 id, uint256 amount) public onlyOwner {
+        _mint(to, id, amount, "");
+    }
+
+    // "Batch Minting" - One of the best features of ERC-1155
+    function mintBatch(address to, uint256[] memory ids, uint256[] memory amounts) public onlyOwner {
+        _mintBatch(to, ids, amounts, "");
+    }
+}
+
+```
+
+---
+
+## 3. Practical Steps in Remix
+
+### Exercise 1: Deployment & Supply Check
+
+1. **Compile and Deploy** `GameItems.sol`.
+2. **Check Balance:** Call `balanceOf` with your address and `id: 0`. You should see `1,000,000`.
+3. **Check NFT:** Call `balanceOf` with your address and `id: 2`. You should see `1`.
+
+### Exercise 2: The Power of Batching
+
+One of the main reasons developers use ERC-1155 is to save gas. Instead of sending 5 transactions to give a player a "Starter Pack," we send one.
+
+1. **Action:** Select a different account in Remix (Account 2).
+2. **Switch back to Owner:** Use the `mintBatch` function.
+* **to:** Account 2's address.
+* **ids:** `[0, 1, 3]`
+* **amounts:** `[500, 1000, 1]`
+
+
+3. **Observation:** In a single transaction, Account 2 now has Gold, Silver, and a Shield.
+
+### Exercise 3: Batch Transfers
+
+1. As Account 2, use the `safeBatchTransferFrom` function to send half your coins back to the Owner.
+* **from:** Account 2.
+* **to:** Owner Address.
+* **ids:** `[0, 1]`
+* **amounts:** `[250, 500]`
+
+
+2. **Observation:** Notice that only one "Transfer" event is emitted for multiple token types.
+
+---
+
+## 4. Key Summary
+
+### A. Gas Efficiency
+
+In ERC-20, transferring 10 different tokens requires 10 transactions (10x base gas cost). In ERC-1155, a `batchTransfer` allows 10 different tokens in 1 transaction, drastically reducing costs for games and marketplaces.
+
+### B. The URI Logic
+
+Notice the constructor URI: `.../{id}.json`.
+
+* Unlike ERC-721 where every token has its own `tokenURI` string stored on-chain, ERC-1155 uses a single template.
+* The `{id}` is replaced by the client (like OpenSea) with the actual hex ID to find the metadata. This saves massive amounts of on-chain storage.
+
+### C. Is it an NFT or Fungible?
+
+* If `totalSupply(id)` is **1**, it behaves like an **NFT**.
+* If `totalSupply(id)` is **> 1**, it behaves like a **Fungible Token**.
